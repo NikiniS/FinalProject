@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:irelax/pages/musicplayer/playlist_screen.dart';
-import 'package:irelax/theme/color_pallete.dart';
+import 'package:final_project/pages/musicplayer/playlist_screen.dart';
+import 'package:final_project/theme/color_pallete.dart';
 import '../models/playlist_model.dart';
 import 'package:google_fonts/google_fonts.dart';
 

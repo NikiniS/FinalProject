@@ -1,6 +1,6 @@
 import "package:flutter/material.dart";
 import 'package:google_fonts/google_fonts.dart';
-import 'package:irelax/theme/color_pallete.dart';
+import 'package:final_project/theme/color_pallete.dart';
 
 
 class RoundBordersCard extends StatefulWidget {

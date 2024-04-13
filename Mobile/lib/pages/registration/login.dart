@@ -1,11 +1,15 @@
 import 'package:email_validator/email_validator.dart';
-import 'package:final_project/pages/registration/signup.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../../components/button.dart';
-import '../../components/text_field.dart';
-import '../../controller/user_controller.dart';
-import '../../theme/color_pallete.dart';
+import 'package:final_project/components/button.dart';
+import 'package:final_project/components/text_field.dart';
+import 'package:final_project/controller/user_controller.dart';
+import 'package:final_project/pages/dashboard/main_screen.dart';
+import 'package:final_project/pages/face_detection/face_detecting.dart';
+import 'package:final_project/pages/registration/login.dart';
+import 'package:final_project/pages/registration/signup.dart';
+import 'package:final_project/pages/registration/signup.dart';
+import 'package:final_project/theme/color_pallete.dart';
 
 
 class LoginBodyScreen extends StatefulWidget {
@@ -15,11 +19,9 @@ class LoginBodyScreen extends StatefulWidget {
 
   @override
   State<LoginBodyScreen> createState() => _LoginBodyScreenState();
-
 }
 
 class _LoginBodyScreenState extends State<LoginBodyScreen> {
-
   final usernameController = TextEditingController();
   final passwordController = TextEditingController();
 
@@ -33,33 +35,33 @@ class _LoginBodyScreenState extends State<LoginBodyScreen> {
       signingIn = false;
     });
 
-  try{
+    try{
       if(result['message']=="Invalid Creditials"){
         showErrorMessage("Invalid Creditials");
         return false;
       }
       else if(result['message']=="success"){
         ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              width: 200,
-              duration: Duration(seconds: 2),
-              backgroundColor: Colors.green,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
-              ),
-              behavior: SnackBarBehavior.floating,
-              content: Center( child:Text("Welcome "+result['user'])),
-            ),);
+          SnackBar(
+            width: 200,
+            duration: Duration(seconds: 2),
+            backgroundColor: Colors.green,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+            behavior: SnackBarBehavior.floating,
+            content: Center( child:Text("Welcome "+result['user'])),
+          ),);
         return true;
       }
       else{
         showErrorMessage("Login Failed");
         return false;
       }}
-      catch(e){
-        print(e);
-        return false;
-      }
+    catch(e){
+      print(e);
+      return false;
+    }
 
   }
 
@@ -218,7 +220,7 @@ class _LoginBodyScreenState extends State<LoginBodyScreen> {
                                           context,
                                           MaterialPageRoute(
                                             builder: (context) =>
-                                             FaceImageScanScreen(),
+                                                FaceImageScanScreen(),
                                           ),
                                         );
 
@@ -246,25 +248,25 @@ class _LoginBodyScreenState extends State<LoginBodyScreen> {
                                               )),
 
                                         )
-                                       ,
+                                        ,
                                         Padding(padding:EdgeInsets.fromLTRB(30, 0, 0, 0),
-                                            child: TextButton(
+                                          child: TextButton(
 
-                                          child: Text(
-                                          "click here",
-                                          style: GoogleFonts.poppins(
-                                            fontSize: 15,
-                                            color: ColorSchema.green,
+                                            child: Text(
+                                              "click here",
+                                              style: GoogleFonts.poppins(
+                                                fontSize: 15,
+                                                color: ColorSchema.green,
+                                              ),
+                                            ),
+                                            onPressed: () => Navigator.push(
+                                              context,
+                                              MaterialPageRoute(
+                                                builder: (context) =>
+                                                const SignupBodyScreen(),
+                                              ),
+                                            ),
                                           ),
-                                        ),
-                              onPressed: () => Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) =>
-                                  const SignupBodyScreen(),
-                                ),
-                              ),
-                            ),
                                         ),
 
                                       ],
@@ -279,11 +281,13 @@ class _LoginBodyScreenState extends State<LoginBodyScreen> {
                     ),
 
                     Transform.translate(
-                      offset: const Offset(15, -350),
-                      child:CircleAvatar(
-                        radius: 165,
-                        backgroundImage: AssetImage("assets/images/8950209.jpg"),
-                      )
+                        offset: const Offset(15, -350),
+                        child:CircleAvatar(
+                          radius: 165,
+                          backgroundImage: AssetImage("assets/images/8950209.jpg"),
+                        )
+
+
 
                     ),
                   ],

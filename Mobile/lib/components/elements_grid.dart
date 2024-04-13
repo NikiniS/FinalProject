@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:irelax/pages/games/game_menu.dart';
+import 'package:final_project/pages/games/game_menu.dart';
 import '../components/round_borders_rect.dart';
 import '../pages/exersice/main.dart';
 import '../pages/face_detection/camera_screen.dart';

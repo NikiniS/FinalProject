@@ -17,6 +17,9 @@ dependencies:
   google_fonts: ^4.0.1
   email_validator: ^2.1.17
   cupertino_icons: ^1.0.2
+  ternav_icons: ^1.0.0
+  camera: ^0.10.5+9
+  socket_io_client: ^2.0.3+1
 
 dev_dependencies:
   flutter_test:

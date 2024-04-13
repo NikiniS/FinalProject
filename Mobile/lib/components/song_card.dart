@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:irelax/pages/musicplayer/song_screen.dart';
+import 'package:final_project/pages/musicplayer/song_screen.dart';
 import '../models/song_model.dart';
 
 class SongCard extends StatelessWidget {
