@@ -1,0 +1,714 @@
+import 'dart:math';
+import 'package:flutter/material.dart';
+import 'dart:async';
+import 'package:assets_audio_player/assets_audio_player.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import './components/button.dart';
+import './game_settings.dart';
+import 'dart:core';
+
+final double BOARD_HEIGHT = 400;
+final double BOARD_WIDTH = 360;
+final double BLOCK_SIZE = 20;
+final double INIT_HEIGHT = 60;
+final double INIT_WIDTH = 40;
+final assetsAudioPlayer = AssetsAudioPlayer();
+
+final TIMEOUT = 500;
+int score = 0;
+Timer? timer;
+bool isStarted = false;
+bool isRunning = false;
+
+class boundary {
+  static double left = INIT_WIDTH,
+      right = INIT_WIDTH + BOARD_WIDTH,
+      up = INIT_HEIGHT,
+      down = INIT_HEIGHT + BOARD_HEIGHT;
+}
+
+class head {
+  static double x=0.0, y=0.0;
+}
+
+class CakePos {
+  static double posx=0, posy=0;
+  static int type=0;
+  static List<int> scores = [1000, 50, 150];
+}
+
+late Direction direction;
+enum Direction { UP, DOWN, LEFT, RIGHT }
+GlobalKey key = GlobalKey();
+List<Positioned> snake = [];
+
+class MyApp2 extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'Flutter Demo',
+      theme: ThemeData(
+        primarySwatch: Colors.grey,
+      ),
+      debugShowCheckedModeBanner: false,
+      home: MyHomePage(title: 'Flutter Demo Home Page'),
+    );
+  }
+
+}
+
+class MyHomePage extends StatefulWidget {
+
+  MyHomePage({required this.title,Key? key}) : super(key: key);
+  final String title;
+
+  @override
+  _MyHomePageState createState() => _MyHomePageState();
+
+}
+
+Container SnakePiece() {
+  return Container(
+    width: BLOCK_SIZE,
+    height: BLOCK_SIZE,
+    decoration: BoxDecoration(
+        color: GameSettings.snakeColor,
+        borderRadius: BorderRadius.circular(10)),
+  );
+}
+
+BoxDecoration getCakeDecoration(int type) {
+  if (type == 1) {
+    return BoxDecoration(
+        color: Colors.brown, borderRadius: BorderRadius.circular(25));
+  } else if (type == 2) {
+    return BoxDecoration(
+        color: Colors.pink, borderRadius: BorderRadius.circular(1));
+  } else if (type == 0) {
+    return BoxDecoration(
+        color: Colors.purple, borderRadius: BorderRadius.circular(5));
+  }
+
+  return BoxDecoration(
+      color: Colors.deepPurpleAccent, borderRadius: BorderRadius.circular(5));
+}
+
+Container Cake(int type) {
+  return Container(
+      width: BLOCK_SIZE,
+      height: BLOCK_SIZE,
+      decoration: getCakeDecoration(type));
+}
+
+class _MyHomePageState extends State<MyHomePage> {
+  void letsmove() {
+
+    try{
+      if (isRunning && isStarted) {
+        if (direction == Direction.RIGHT)
+          moveright();
+        else if (direction == Direction.LEFT)
+          moveleft();
+        else if (direction == Direction.DOWN)
+          movedown();
+        else if (direction == Direction.UP) moveup();
+      }
+    }catch(e){
+
+      print("windows closed cannot perform any functions");
+
+    }
+
+  }
+
+
+  Future<dynamic> openDialog() {
+    return showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return Container(
+            height: 230,
+            child: SimpleDialog(
+              children: <Widget>[
+                Container(
+                  height: 100,
+                  width: 100,
+                  margin: EdgeInsets.only(bottom: 20),
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    image: DecorationImage(
+                      image: (score > 1000)
+                          ? NetworkImage(
+                              "https://encrypted-tbn0.gstatic.com/images?q=tbn%3AANd9GcTOMXAN0eSVZI3oQiYigeCcY0N2nOnbhrWqevC_EI5eN2ECWXKH&usqp=CAU")
+                          : NetworkImage(
+                              "https://hotemoji.com/images/dl/x/sad-emoji-by-google.png"),
+                    ),
+                  ),
+                ),
+                Container(
+                    alignment: Alignment.center,
+                    height: 80,
+                    padding: EdgeInsets.only(top: 20),
+                    color: (score > 1000) ? Colors.green : Colors.red,
+                    child: Column(
+                      children: <Widget>[
+                        Center(
+                          child: Text("Your Score $score",
+                              style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.w500)),
+                        ),
+                        (score > 1000)
+                            ? Center(
+                                child: Text(
+                                    "Hey Congo Share it with your friends"))
+                            : Center(
+                                child: Text("You should try again I think")),
+                      ],
+                    )),
+                Container(
+                    margin: EdgeInsets.only(top: 10),
+                    height: 50,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceAround,
+                      children: <Widget>[
+                        Container(
+                          height: 50,
+                          width: 100,
+                          child: MyButton(onPressed: (){
+
+                          }, buttonText: "Retry",)
+                        ),
+                      ],
+                    ))
+              ],
+            ),
+          );
+        });
+  }
+
+  dynamic update_leaderboard() async {
+    // print("Here at Uploading Leaderboard");
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    List<String>? li = prefs.getStringList("highscores");
+    // print(li);
+    if (li == null)
+      li = [score.toString()];
+    else if (li.length < 5)
+      li.add(score.toString());
+    else {
+      li.sort((a, b) {
+        return int.parse(a).compareTo(int.parse(b));
+      });
+      if (score > int.parse(li[0])) li[0] = score.toString();
+    }
+
+    prefs.setStringList("highscores", li);
+  }
+
+  dynamic print_leaderboard() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    List<String>? li = prefs.getStringList("highscores");
+    // print(li);
+  }
+
+  void gameover() async {
+    isStarted = false;
+    isRunning = false;
+    snake.clear();
+    timer?.cancel();
+    print("Game Over");
+    await update_leaderboard();
+    await openDialog();
+    score = 0;
+  }
+
+  void dosomething() async {
+    if (GameSettings.sounds == true) {
+      assetsAudioPlayer.open(Audio("assets/1.mp3"));
+    }
+    int type = CakePos.type;
+    score += CakePos.scores[type];
+    produce_cake();
+    snake.add(Positioned(left: head.x, top: head.y, child: SnakePiece()));
+  }
+
+  bool containss(Positioned element) {
+    for (Positioned e in snake) {
+      if (e.left == element.left && e.top == element.top) return true;
+    }
+    return false;
+  }
+
+  void moveright() {
+
+    setState(() {
+      head.x = head.x + BLOCK_SIZE;
+      if (containss(Positioned(child: SnakePiece(), top: head.y, left: head.x)))
+        gameover();
+      if (head.x == CakePos.posx && head.y == CakePos.posy)
+        dosomething();
+      else {
+        snake.removeAt(0);
+        snake.add(Positioned(
+          child: SnakePiece(),
+          top: head.y,
+          left: head.x,
+        ));
+      }
+      if (head.x >= boundary.right) gameover();
+      direction = Direction.RIGHT;
+    });
+  }
+
+  void moveleft() {
+
+    setState(() {
+      head.x = head.x - BLOCK_SIZE;
+      if (containss(Positioned(child: SnakePiece(), top: head.y, left: head.x)))
+        gameover();
+      if (head.x == CakePos.posx && head.y == CakePos.posy)
+        dosomething();
+      else {
+        snake.removeAt(0);
+        snake.add(Positioned(child: SnakePiece(), top: head.y, left: head.x));
+      }
+      if (head.x < boundary.left) gameover();
+      direction = Direction.LEFT;
+    });
+  }
+
+  void moveup() {
+
+
+    setState(() {
+      head.y = head.y - BLOCK_SIZE;
+      if (containss(Positioned(child: SnakePiece(), top: head.y, left: head.x)))
+        gameover();
+      if (head.x == CakePos.posx && head.y == CakePos.posy)
+        dosomething();
+      else {
+        snake.removeAt(0);
+        snake.add(Positioned(child: SnakePiece(), top: head.y, left: head.x));
+      }
+      if (head.y < boundary.up) gameover();
+      direction = Direction.UP;
+    });
+  }
+
+  void movedown() {
+
+    setState(() {
+      head.y = head.y + BLOCK_SIZE;
+      if (containss(Positioned(child: SnakePiece(), top: head.y, left: head.x)))
+        gameover();
+
+      if (head.x == CakePos.posx && head.y == CakePos.posy)
+        dosomething();
+      else {
+        snake.removeAt(0);
+        snake.add(Positioned(child: SnakePiece(), top: head.y, left: head.x));
+      }
+      if (head.y >= boundary.down) gameover();
+      direction = Direction.DOWN;
+      // print("Direction Changed");
+      // print(direction);
+    });
+  }
+
+  void produce_cake() {
+    //Sel a random pos bw
+    //width 20 to 380
+    //height 40 to 440
+    int w = Random().nextInt(BOARD_WIDTH ~/ BLOCK_SIZE) * BLOCK_SIZE.toInt() +
+        INIT_WIDTH.toInt();
+    int ht = Random().nextInt(BOARD_HEIGHT ~/ BLOCK_SIZE) * BLOCK_SIZE.toInt() +
+        INIT_HEIGHT.toInt();
+    CakePos.posx = w.toDouble();
+    CakePos.posy = ht.toDouble();
+    List li = [1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 0];
+    CakePos.type = li[Random().nextInt(li.length)];
+  }
+
+  Widget controls() {
+    double _width = 50;
+    double _height = 50;
+    if (GameSettings.controltype == 1) {
+      // print("Position for controlType 1");
+      return Container(
+          child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+            Container(
+                height: _height,
+                width: _width,
+                child: FittedBox(
+                  child: FloatingActionButton(
+                    backgroundColor: GameSettings.bcolor,
+                    heroTag: null,
+                    child: Icon(Icons.keyboard_arrow_left),
+                    onPressed: () {
+                      if (direction != Direction.RIGHT &&
+                          direction != Direction.LEFT &&
+                          isRunning &&
+                          isStarted) moveleft();
+                    },
+                  ),
+                )),
+            Column(
+              children: <Widget>[
+                Container(
+                    margin: EdgeInsets.only(bottom: 20),
+                    height: _height,
+                    width: _width,
+                    child: FittedBox(
+                      child: FloatingActionButton(
+                        backgroundColor: GameSettings.bcolor,
+                        heroTag: null,
+                        child: Icon(Icons.keyboard_arrow_up),
+                        onPressed: () {
+                          if (direction != Direction.DOWN &&
+                              direction != Direction.UP &&
+                              isRunning &&
+                              isStarted) moveup();
+                        },
+                      ),
+                    )),
+                Container(
+                    height: _height,
+                    width: _width,
+                    child: FittedBox(
+                      child: FloatingActionButton(
+                        heroTag: null,
+                        backgroundColor: GameSettings.bcolor,
+                        child: Icon(Icons.keyboard_arrow_down),
+                        onPressed: () {
+                          if (direction != Direction.UP &&
+                              direction != Direction.DOWN &&
+                              isRunning &&
+                              isStarted) movedown();
+                        },
+                      ),
+                    )),
+              ],
+            ),
+            Container(
+                height: _height,
+                width: _width,
+                child: FittedBox(
+                  child: FloatingActionButton(
+                    backgroundColor: GameSettings.bcolor,
+                    heroTag: null,
+                    child: Icon(Icons.keyboard_arrow_right),
+                    onPressed: () {
+                      if (direction != Direction.LEFT &&
+                          direction != Direction.RIGHT &&
+                          isRunning &&
+                          isStarted) moveright();
+                    },
+                  ),
+                )),
+          ]));
+    } else if (GameSettings.controltype == 2) {
+      return Container(color: Colors.grey);
+    } else if (GameSettings.controltype == 3) {
+      // print("here");
+      return Container(
+          child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceAround,
+        children: <Widget>[
+          Container(
+              height: _height,
+              width: _width,
+              child: FittedBox(
+                child: FloatingActionButton(
+                  backgroundColor: GameSettings.bcolor,
+                  heroTag: null,
+                  child: Icon(Icons.rotate_left),
+                  //Anticlockwise
+                  onPressed: () {
+                    if (direction == Direction.RIGHT && isRunning && isStarted)
+                      moveup();
+                    else if (direction == Direction.DOWN &&
+                        isRunning &&
+                        isStarted)
+                      moveright();
+                    else if (direction == Direction.LEFT &&
+                        isRunning &&
+                        isStarted)
+                      movedown();
+                    else if (direction == Direction.UP &&
+                        isRunning &&
+                        isStarted) moveleft();
+                  },
+                ),
+              )),
+          Container(
+              height: _height,
+              width: _width,
+              child: FittedBox(
+                child: FloatingActionButton(
+                  backgroundColor: GameSettings.bcolor,
+                  heroTag: null,
+                  child: Icon(Icons.rotate_right),
+                  onPressed: () {
+                    // Clockwise
+                    if (direction == Direction.RIGHT &&
+                        isRunning &&
+                        isStarted) {
+                      movedown();
+                    } else if (direction == Direction.DOWN &&
+                        isRunning &&
+                        isStarted)
+                      moveleft();
+                    else if (direction == Direction.LEFT &&
+                        isRunning &&
+                        isStarted)
+                      moveup();
+                    else if (direction == Direction.UP &&
+                        isRunning &&
+                        isStarted) moveright();
+                  },
+                ),
+              )),
+        ],
+      ));
+    } else if (GameSettings.controltype == 4) {
+      return Container(
+          height: 200,
+          width: MediaQuery.of(context).size.width,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: <Widget>[
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: <Widget>[
+                  getButton("1", false),
+                  getButton("2", true),
+                  getButton("3", false),
+                ],
+              ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: <Widget>[
+                  getButton("4", true),
+                  getButton("5", false),
+                  getButton("6", true),
+                ],
+              ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: <Widget>[
+                  getButton("7", false),
+                  getButton("8", true),
+                  getButton("9", false),
+                ],
+              ),
+            ],
+          ));
+    }
+    else{
+      return Container(
+        child: Center(
+          child: Text("no content to display"),
+        ),
+      );
+    }
+  }
+
+  Expanded getButton(String s, bool detectTap) {
+    return Expanded(
+        child: InkWell(
+                onTap: () {
+        if (direction != Direction.UP &&
+            direction != Direction.DOWN &&
+            isRunning &&
+            isStarted &&
+            s == "8")
+          movedown();
+        else if (direction != Direction.DOWN &&
+            direction != Direction.UP &&
+            isRunning &&
+            isStarted &&
+            s == "2")
+          moveup();
+        else if (direction != Direction.RIGHT &&
+            direction != Direction.LEFT &&
+            isRunning &&
+            isStarted &&
+            s == "4")
+          moveleft();
+        else if (direction != Direction.RIGHT &&
+            direction != Direction.LEFT &&
+            isRunning &&
+            isStarted &&
+            s == "6") moveright();
+      },
+                  child: Container(
+              alignment: Alignment.center,
+              height: 60,
+              width: 50,
+              color: GameSettings.bcolor,
+              child: Text(s,style:TextStyle(color:Colors.white))),
+        ),
+  );
+
+  }
+
+  void startGame() {
+    if (!isStarted) {
+      isStarted = true;
+      isRunning = true;
+      snake.clear();
+      snake.add(
+          Positioned(left: INIT_WIDTH, top: INIT_HEIGHT, child: SnakePiece()));
+      snake.add(Positioned(
+          left: INIT_WIDTH + 20, top: INIT_HEIGHT, child: SnakePiece()));
+      produce_cake();
+      head.x = INIT_WIDTH + 20;
+      head.y = INIT_HEIGHT;
+      direction = Direction.RIGHT;
+      timer = new Timer.periodic(
+          new Duration(milliseconds: TIMEOUT), (Timer t) {
+            letsmove();
+            if(!this.mounted){
+              try{
+                gameover();
+              }catch(e){
+                print("application closed");
+              }
+
+
+            }
+
+      });
+    }
+  }
+
+  @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+
+  }
+
+  @override
+  void dispose() {
+    // TODO: implement dispose
+    super.dispose();
+  }
+
+
+  Widget build(BuildContext context) {
+    return Scaffold(
+        body: Container(
+          color: GameSettings.bgcolor,
+          child:GestureDetector(
+            onPanUpdate: (drag) {
+              if (GameSettings.controltype == 2 && isRunning && isStarted) {
+                print("Position for controlType 2");
+                if (drag.delta.dx > 13 &&
+                    direction != Direction.LEFT &&
+                    direction != Direction.RIGHT) {
+                  // print("Moving Right\n");
+                  moveright();
+                } else if (drag.delta.dx < -13 &&
+                    direction != Direction.RIGHT &&
+                    direction != Direction.LEFT) {
+                  // print("Moving Left\n");
+                  moveleft();
+                } else if (drag.delta.dy > 13 &&
+                    direction != Direction.UP &&
+                    direction != Direction.DOWN) {
+                  // print("Moving Down\n");
+                  movedown();
+                } else if (drag.delta.dy < -13 &&
+                    direction != Direction.DOWN &&
+                    direction != Direction.UP) {
+                  // print("Moving Up\n");
+                  moveup();
+                }
+              }
+            },
+            child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: <Widget>[
+              Stack(children: [
+                Container(
+                    alignment: Alignment(0, -0.88),
+                    color: GameSettings.bgcolor,
+                    height: BOARD_HEIGHT + INIT_HEIGHT + 20,
+                    width: BOARD_WIDTH + INIT_WIDTH + 20,
+                    child: Text(
+                      "Score $score",
+                      style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w900,
+                          fontSize: 17),
+                    )),
+                Positioned(
+                  left: INIT_WIDTH,
+                  top: INIT_HEIGHT,
+                  height: BOARD_HEIGHT,
+                  width: BOARD_WIDTH,
+                  child: Container(
+                    key: key,
+                    height: BOARD_HEIGHT,
+                    width: BOARD_WIDTH,
+                    // color: Colors.white,
+                    decoration: BoxDecoration(
+                      // color: Colors.white,
+                        image: DecorationImage(fit:BoxFit.cover,image: AssetImage("assets/images/grass2.jpeg"))
+                    ),
+                  ),
+                ),
+                for (var i in snake) i,
+                Container(
+                  child: isStarted
+                      ? Positioned(
+                      left: CakePos.posx,
+                      top: CakePos.posy,
+                      child: Cake(CakePos.type))
+                      : null,
+                )
+              ]),
+              Expanded(
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  children: <Widget>[
+
+                    MyButton(
+                      textColor: Colors.white,
+                      buttonColor: GameSettings.bcolor,
+                      onPressed: () {
+                        startGame();
+                      },
+
+                      buttonText: "Start",buttonHeight: 50,buttonWidth: 100,fontSize:15
+                    ),
+
+                    MyButton(onPressed:() {
+                      setState(() {
+                        isRunning = !isRunning;
+                      });
+                    } , buttonText: isRunning ? "Pause" : "Resume",buttonColor: Colors.white,textColor: Colors.black,
+                    buttonHeight: 50,buttonWidth: 100,fontSize:15,
+
+                    )
+
+                  ],
+                ),
+              ),
+              controls()
+            ],
+          ),
+        ),
+        ) ,
+      );
+
+  }
+}

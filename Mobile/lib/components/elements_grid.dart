@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:final_project/pages/games/game_menu.dart';
 import '../components/round_borders_rect.dart';
-import '../pages/exersice/main.dart';
+//import '../pages/exersice/main.dart';
 import '../pages/face_detection/camera_screen.dart';
 import '../pages/face_detection/face_detecting.dart';
 import '../pages/musicplayer/home_screen.dart';
@@ -38,18 +38,18 @@ class MenuElementGrid extends StatelessWidget {
 
                      }),
 
-                      RoundBordersCard(importedImage: "assets/images/weightLifting_men.jpg",ContentText: "Lets do some\nexcersices",buttonColor: Colors.black,
-                          chipText2: "DO EXCERSICES"
-                          ,onPressed: (){
+                      //RoundBordersCard(importedImage: "assets/images/weightLifting_men.jpg",ContentText: "Lets do some\nexcersices",buttonColor: Colors.black,
+                // chipText2: "DO EXCERSICES"
+    // ,onPressed: (){
 
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) =>
-                                    ExcersiceApp(),
-                              ),
-                            );
-                          }),
+    //  Navigator.push(
+    //  context,
+                      // MaterialPageRoute(
+                                // builder: (context) =>
+                                //    ExcersiceApp(),
+                                //  ),
+                      // );
+              // }),
 
                       RoundBordersCard(importedImage: "assets/images/instument_playing.jpg",ContentText: "Lets listen some\nmind relaxing songs",buttonColor: Colors.black,
                           chipText2: "LISTEN TO SONGS"
