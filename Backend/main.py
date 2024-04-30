@@ -50,7 +50,8 @@ class UserModel(db.Model):
 class UserLogin(Resource):
     def post(self):
         args = user_login_parser.parse_args()
-        user = UserModel.query.filter_by(username=args['username']).first()
+
+        user = UserModel.query.filter((UserModel.username == args['username']) | (UserModel.email == args['username'])).first()
         print("validating credentials")
         if user:
             if user and bcrypt.check_password_hash(user.password, args['password']):
